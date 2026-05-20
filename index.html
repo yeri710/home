@@ -22,21 +22,11 @@
 <script type="text/babel">
 const { useState, useEffect, useCallback, useRef } = React;
 
-// ── API 설정 ──────────────────────────────────────────────────────────────────
-const API_KEY = "ce12d20cefc1e376aa65c2ab8111cb5a249fbcbe8b9fa5b85afdbeb00a9ee681"; // 발급받은 키 여기에 입력
-
-const API_ENDPOINTS = {
-  apt:      "https://apis.data.go.kr/1613000/AptBldgSttsService/getAptBldgStts",
-  officetel:"https://apis.data.go.kr/1613000/OfctlAndDosiFormHousBldgSttsService/getOfctlAndDosiFormHousBldgStts",
-  urban:    "https://apis.data.go.kr/1613000/UrbnRntHousBldgSttsService/getUrbnRntHousBldgStts",
-  lodging:  "https://apis.data.go.kr/1613000/LivngHostHousBldgSttsService/getLivngHostHousBldgStts",
-};
-
+// ── API 설정 (Vercel 서버 경유) ─────────────────────────────────────────────
 async function fetchByType({ type="apt", sido="", pageNo=1, numOfRows=10 } = {}) {
-  const base = API_ENDPOINTS[type] || API_ENDPOINTS.apt;
-  const params = new URLSearchParams({ serviceKey:API_KEY, pageNo, numOfRows, sido, _type:"json" });
+  const params = new URLSearchParams({ type, sido, pageNo, numOfRows });
   try {
-    const res = await fetch(`${base}?${params}`);
+    const res = await fetch(`/api/cheongyak?${params}`);
     const data = await res.json();
     const raw = data?.response?.body?.items?.item || [];
     const items = (Array.isArray(raw) ? raw : [raw]).map(i => ({ ...i, _type: type }));
@@ -700,7 +690,6 @@ function App() {
   const toggleBookmark = id => setBookmarks(prev => prev.includes(id)?prev.filter(b=>b!==id):[...prev,id]);
 
   const loadData = useCallback(async () => {
-    if (API_KEY==="YOUR_API_KEY_HERE") { setItems(MOCK_DATA); setUsingMock(true); return; }
     setLoading(true); setUsingMock(false);
     const sido = selectedSido==="전체"?"":selectedSido;
     const results = await Promise.all(HOUSE_TYPES.map(t=>fetchByType({type:t.key,sido})));
@@ -756,7 +745,7 @@ function App() {
             <Icon.Home size={22} color={C.blue} filled/>
             <h1 style={{ fontSize:22, fontWeight:900, color:C.text, margin:0, letterSpacing:"-0.8px" }}>청약 메이트</h1>
           </div>
-          <p style={{ fontSize:12, color:C.muted, margin:"0 0 14px" }}>{usingMock?"⚠️ 데모 데이터 · API 키를 설정해주세요":`${filtered.length}개 공고 확인됨`}</p>
+          <p style={{ fontSize:12, color:C.muted, margin:"0 0 14px" }}>{usingMock?"공공데이터 불러오는 중...":`${filtered.length}개 공고 확인됨`}</p>
           <div style={{ position:"relative", marginBottom:12 }}>
             <span style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)" }}><Icon.Search size={16}/></span>
             <input value={searchText} onChange={e=>setSearchText(e.target.value)} placeholder="단지명, 지역 검색" style={{ width:"100%", background:"#F5F6F8", border:"none", borderRadius:14, padding:"12px 14px 12px 40px", fontSize:14, outline:"none", color:"#222" }}/>
