@@ -23,14 +23,34 @@
 const { useState, useEffect, useCallback, useRef } = React;
 
 // ── API 설정 (Vercel 서버 경유) ─────────────────────────────────────────────
+function normalizeItem(i, type) {
+  return {
+    id: i.HOUSE_MANAGE_NO || i.PBLANC_NO || Math.random(),
+    houseNm:          i.HOUSE_NM             || "",
+    hssplyAdres:      i.HSSPLY_ADRES         || "",
+    sido:             i.SUBSCRPT_AREA_CODE_NM|| "",
+    totHouseholdCo:   i.TOT_SUPLY_HSHLDCO   || 0,
+    houseSecd:        i.HOUSE_DTL_SECD_NM    || i.HOUSE_SECD_NM || "",
+    rcritPblancDe:    i.RCRIT_PBLANC_DE      || "",
+    specltRceptBgnde: i.SPSPLY_RCEPT_BGNDE   || i.SUBSCRPT_RCEPT_BGNDE || "",
+    specltRceptEndde: i.SPSPLY_RCEPT_ENDDE   || i.SUBSCRPT_RCEPT_ENDDE || "",
+    gnrlRnk1CrspareaEndde: i.GNRL_RNK1_CRSPAREA_RCPTDE || i.SUBSCRPT_RCEPT_BGNDE || "",
+    przwnerPresnatnDe: i.PRZWNER_PRESNATN_DE || "",
+    mvnPrearngeYm:    i.MVN_PREARNGE_YM      || "",
+    pblanc_url:       i.PBLANC_URL || i.HMPG_ADRES || "https://www.applyhome.co.kr",
+    minPrice: null, maxPrice: null, competition: null, tag: null,
+    _type: type,
+  };
+}
+
 async function fetchByType({ type="apt", sido="", pageNo=1, numOfRows=10 } = {}) {
   const params = new URLSearchParams({ type, sido, pageNo, numOfRows });
   try {
     const res = await fetch(`/api/cheongyak?${params}`);
     const data = await res.json();
-    const raw = data?.response?.body?.items?.item || [];
-    const items = (Array.isArray(raw) ? raw : [raw]).map(i => ({ ...i, _type: type }));
-    return { items, total: data?.response?.body?.totalCount || 0 };
+    const raw = data?.data || [];
+    const items = (Array.isArray(raw) ? raw : [raw]).map(i => normalizeItem(i, type));
+    return { items, total: data?.totalCount || 0 };
   } catch { return { items:[], total:0, error:true }; }
 }
 
@@ -823,12 +843,7 @@ function App() {
       {activeTab==="bookmark" && <BookmarkTab items={items} bookmarks={bookmarks} onToggleBookmark={toggleBookmark} onSelectItem={setSelectedItem}/>}
       {activeTab==="mypage"   && <MyPageTab bookmarks={bookmarks} items={items}/>}
 
-      {/* API 배너 */}
-      {usingMock && activeTab==="list" && (
-        <div style={{ position:"fixed", bottom:72, left:"50%", transform:"translateX(-50%)", background:"#222", color:"#fff", borderRadius:14, padding:"10px 18px", fontSize:12, fontWeight:600, width:"calc(100% - 32px)", maxWidth:398, textAlign:"center", zIndex:40, boxShadow:"0 4px 20px rgba(0,0,0,0.2)" }}>
-          data.go.kr에서 API 키 발급 후 코드 3번째 줄 API_KEY에 입력하세요
-        </div>
-      )}
+
 
       {/* 탭바 */}
       <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:430, background:"#fff", borderTop:"1px solid #F0F0F0", display:"flex", padding:"10px 0 20px", zIndex:50 }}>
